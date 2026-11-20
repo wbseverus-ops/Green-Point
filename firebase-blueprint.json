@@ -1,0 +1,373 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Shared organization workspace for employee activity points",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Workspace display name"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Owner Firebase Auth UID"
+        },
+        "sharedEmails": {
+          "type": "array",
+          "description": "Authorized teammate email addresses (max 20)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when workspace was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when workspace was last updated"
+        }
+      },
+      "required": ["name", "ownerUid", "sharedEmails", "createdAt", "updatedAt"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee record with accumulated and available activity points",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sharedEmails": {
+          "type": "array"
+        },
+        "employeeCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "department": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "availablePoints": {
+          "type": "number"
+        },
+        "lifetimePoints": {
+          "type": "number"
+        },
+        "activitiesCount": {
+          "type": "number"
+        },
+        "joinedDate": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "sharedEmails",
+        "employeeCode",
+        "fullName",
+        "department",
+        "role",
+        "email",
+        "availablePoints",
+        "lifetimePoints",
+        "activitiesCount",
+        "joinedDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Company SHE, ENVI, or general activity definition with point value",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sharedEmails": {
+          "type": "array"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "points": {
+          "type": "number"
+        },
+        "eventDate": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 32
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "closed"]
+        },
+        "participantsCount": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "sharedEmails",
+        "title",
+        "category",
+        "points",
+        "eventDate",
+        "status",
+        "participantsCount",
+        "description",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PointLog": {
+      "title": "PointLog",
+      "description": "Immutable ledger entry for earned activity points or redeemed rewards",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sharedEmails": {
+          "type": "array"
+        },
+        "employeeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "employeeCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "employeeName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "department": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "activityId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "activityTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "pointsDelta": {
+          "type": "number"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["earn", "redeem"]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "recordedAt": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64
+        },
+        "recordedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "sharedEmails",
+        "employeeId",
+        "employeeCode",
+        "employeeName",
+        "department",
+        "activityId",
+        "activityTitle",
+        "pointsDelta",
+        "type",
+        "note",
+        "recordedAt",
+        "recordedBy",
+        "createdAt"
+      ]
+    },
+    "Reward": {
+      "title": "Reward",
+      "description": "Reward item redeemable with employee activity points",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sharedEmails": {
+          "type": "array"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "pointsCost": {
+          "type": "number"
+        },
+        "stock": {
+          "type": "number"
+        },
+        "redeemedCount": {
+          "type": "number"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "sharedEmails",
+        "title",
+        "category",
+        "pointsCost",
+        "stock",
+        "redeemedCount",
+        "description",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/Workspace" },
+      "description": "Workspace root document storing ownership and authorized team emails"
+    },
+    "/workspaces/{workspaceId}/employees/{employeeId}": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "Employees in the workspace"
+    },
+    "/workspaces/{workspaceId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/Activity" },
+      "description": "Activities in the workspace"
+    },
+    "/workspaces/{workspaceId}/logs/{logId}": {
+      "schema": { "$ref": "#/entities/PointLog" },
+      "description": "Point earning and reward redemption logs"
+    },
+    "/workspaces/{workspaceId}/rewards/{rewardId}": {
+      "schema": { "$ref": "#/entities/Reward" },
+      "description": "Redeemable rewards catalog"
+    }
+  }
+}

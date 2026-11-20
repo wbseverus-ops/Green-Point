@@ -1,0 +1,308 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerified() &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() == 'wbseverus@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string &&
+        id.size() >= 1 &&
+        id.size() <= 128 &&
+        id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidSharedEmails(arr) {
+      return arr is list &&
+        arr.size() <= 20 &&
+        (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 160));
+    }
+
+    function hasResourceAccess(data) {
+      return isVerified() && (
+        isBootstrappedAdmin() ||
+        data.ownerUid == request.auth.uid ||
+        (request.auth.token.email != null && request.auth.token.email.lower() in data.sharedEmails)
+      );
+    }
+
+    function isWorkspaceAuthorized(workspaceId) {
+      return isVerified() && (
+        isBootstrappedAdmin() ||
+        (
+          exists(/databases/$(database)/documents/workspaces/$(workspaceId)) &&
+          hasResourceAccess(get(/databases/$(database)/documents/workspaces/$(workspaceId)).data)
+        )
+      );
+    }
+
+    function isValidWorkspace(data) {
+      return data.keys().hasAll(['name', 'ownerUid', 'sharedEmails', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['name', 'ownerUid', 'sharedEmails', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+        isValidSharedEmails(data.sharedEmails) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidEmployee(data) {
+      return data.keys().hasAll([
+          'id', 'ownerUid', 'sharedEmails', 'employeeCode', 'fullName',
+          'department', 'role', 'email', 'availablePoints', 'lifetimePoints',
+          'activitiesCount', 'joinedDate', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerUid', 'sharedEmails', 'employeeCode', 'fullName',
+          'department', 'role', 'email', 'availablePoints', 'lifetimePoints',
+          'activitiesCount', 'joinedDate', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+        isValidSharedEmails(data.sharedEmails) &&
+        data.employeeCode is string && data.employeeCode.size() >= 1 && data.employeeCode.size() <= 32 &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 120 &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 80 &&
+        data.role is string && data.role.size() >= 1 && data.role.size() <= 100 &&
+        data.email is string && data.email.size() <= 160 &&
+        data.availablePoints is number && data.availablePoints >= 0 &&
+        data.lifetimePoints is number && data.lifetimePoints >= 0 &&
+        data.activitiesCount is number && data.activitiesCount >= 0 &&
+        data.joinedDate is string && data.joinedDate.size() >= 4 && data.joinedDate.size() <= 32 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll([
+          'id', 'ownerUid', 'sharedEmails', 'title', 'category',
+          'points', 'eventDate', 'status', 'participantsCount',
+          'description', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerUid', 'sharedEmails', 'title', 'category',
+          'points', 'eventDate', 'status', 'participantsCount',
+          'description', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+        isValidSharedEmails(data.sharedEmails) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+        data.points is number && data.points >= 1 &&
+        data.eventDate is string && data.eventDate.size() >= 4 && data.eventDate.size() <= 32 &&
+        data.status in ['active', 'closed'] &&
+        data.participantsCount is number && data.participantsCount >= 0 &&
+        data.description is string && data.description.size() <= 500 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPointLog(data) {
+      return data.keys().hasAll([
+          'id', 'ownerUid', 'sharedEmails', 'employeeId', 'employeeCode',
+          'employeeName', 'department', 'activityId', 'activityTitle',
+          'pointsDelta', 'type', 'note', 'recordedAt', 'recordedBy', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerUid', 'sharedEmails', 'employeeId', 'employeeCode',
+          'employeeName', 'department', 'activityId', 'activityTitle',
+          'pointsDelta', 'type', 'note', 'recordedAt', 'recordedBy', 'createdAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+        isValidSharedEmails(data.sharedEmails) &&
+        data.employeeId is string && data.employeeId.size() >= 1 && data.employeeId.size() <= 128 &&
+        data.employeeCode is string && data.employeeCode.size() >= 1 && data.employeeCode.size() <= 32 &&
+        data.employeeName is string && data.employeeName.size() >= 1 && data.employeeName.size() <= 120 &&
+        data.department is string && data.department.size() >= 1 && data.department.size() <= 80 &&
+        data.activityId is string && data.activityId.size() >= 1 && data.activityId.size() <= 128 &&
+        data.activityTitle is string && data.activityTitle.size() >= 1 && data.activityTitle.size() <= 240 &&
+        data.pointsDelta is number &&
+        data.type in ['earn', 'redeem'] &&
+        data.note is string && data.note.size() <= 500 &&
+        data.recordedAt is string && data.recordedAt.size() >= 4 && data.recordedAt.size() <= 64 &&
+        data.recordedBy is string && data.recordedBy.size() >= 1 && data.recordedBy.size() <= 120 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidReward(data) {
+      return data.keys().hasAll([
+          'id', 'ownerUid', 'sharedEmails', 'title', 'category',
+          'pointsCost', 'stock', 'redeemedCount', 'description',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerUid', 'sharedEmails', 'title', 'category',
+          'pointsCost', 'stock', 'redeemedCount', 'description',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+        isValidSharedEmails(data.sharedEmails) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+        data.pointsCost is number && data.pointsCost >= 1 &&
+        data.stock is number && data.stock >= 0 &&
+        data.redeemedCount is number && data.redeemedCount >= 0 &&
+        data.description is string && data.description.size() <= 500 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    match /workspaces/{workspaceId} {
+      allow get: if isValidId(workspaceId) && hasResourceAccess(existing());
+      allow list: if isVerified() && (
+        isBootstrappedAdmin() ||
+        existing().ownerUid == request.auth.uid ||
+        (request.auth.token.email != null && request.auth.token.email.lower() in existing().sharedEmails)
+      );
+      allow create: if isVerified() &&
+        isValidId(workspaceId) &&
+        isValidWorkspace(incoming()) &&
+        incoming().ownerUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() &&
+        isValidId(workspaceId) &&
+        isValidWorkspace(incoming()) &&
+        (isBootstrappedAdmin() || existing().ownerUid == request.auth.uid) &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'sharedEmails', 'updatedAt']);
+      allow delete: if false;
+
+      match /employees/{employeeId} {
+        allow get: if isValidId(workspaceId) && isValidId(employeeId) && hasResourceAccess(existing());
+        allow list: if isValidId(workspaceId) && hasResourceAccess(existing());
+        allow create: if isValidId(workspaceId) &&
+          isValidId(employeeId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidEmployee(incoming()) &&
+          incoming().id == employeeId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) &&
+          isValidId(employeeId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidEmployee(incoming()) &&
+          incoming().id == existing().id &&
+          incoming().ownerUid == existing().ownerUid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            isBootstrappedAdmin() ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'employeeCode', 'fullName', 'department', 'role', 'email',
+              'availablePoints', 'lifetimePoints', 'activitiesCount',
+              'sharedEmails', 'updatedAt'
+            ])
+          );
+        allow delete: if isValidId(workspaceId) &&
+          isValidId(employeeId) &&
+          isWorkspaceAuthorized(workspaceId);
+      }
+
+      match /activities/{activityId} {
+        allow get: if isValidId(workspaceId) && isValidId(activityId) && hasResourceAccess(existing());
+        allow list: if isValidId(workspaceId) && hasResourceAccess(existing());
+        allow create: if isValidId(workspaceId) &&
+          isValidId(activityId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidActivity(incoming()) &&
+          incoming().id == activityId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) &&
+          isValidId(activityId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidActivity(incoming()) &&
+          incoming().id == existing().id &&
+          incoming().ownerUid == existing().ownerUid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            isBootstrappedAdmin() ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'category', 'points', 'eventDate', 'status',
+              'participantsCount', 'description', 'sharedEmails', 'updatedAt'
+            ])
+          );
+        allow delete: if false;
+      }
+
+      match /logs/{logId} {
+        allow get: if isValidId(workspaceId) && isValidId(logId) && hasResourceAccess(existing());
+        allow list: if isValidId(workspaceId) && hasResourceAccess(existing());
+        allow create: if isValidId(workspaceId) &&
+          isValidId(logId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidPointLog(incoming()) &&
+          incoming().id == logId &&
+          incoming().createdAt == request.time;
+        allow update: if isValidId(workspaceId) &&
+          isValidId(logId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidPointLog(incoming()) &&
+          incoming().id == existing().id &&
+          incoming().ownerUid == existing().ownerUid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['sharedEmails']);
+        allow delete: if false;
+      }
+
+      match /rewards/{rewardId} {
+        allow get: if isValidId(workspaceId) && isValidId(rewardId) && hasResourceAccess(existing());
+        allow list: if isValidId(workspaceId) && hasResourceAccess(existing());
+        allow create: if isValidId(workspaceId) &&
+          isValidId(rewardId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidReward(incoming()) &&
+          incoming().id == rewardId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(workspaceId) &&
+          isValidId(rewardId) &&
+          isWorkspaceAuthorized(workspaceId) &&
+          isValidReward(incoming()) &&
+          incoming().id == existing().id &&
+          incoming().ownerUid == existing().ownerUid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            isBootstrappedAdmin() ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'category', 'pointsCost', 'stock', 'redeemedCount',
+              'description', 'sharedEmails', 'updatedAt'
+            ])
+          );
+        allow delete: if false;
+      }
+    }
+  }
+}

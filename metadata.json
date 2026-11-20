@@ -1,0 +1,8 @@
+{
+  "name": "Remix PulsePoint HR — ระบบสะสมคะแนนกิจกรรมพนักงาน",
+  "description": "เว็บแอปพลิเคชันสำหรับบันทึกและสะสมคะแนนการเข้าร่วมกิจกรรมของพนักงาน เชื่อมต่อ Google Apps Script และ Google Sheets พร้อมโค้ดติดตั้งใช้งานจริง",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
